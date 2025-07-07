@@ -1,6 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#ifndef PRECISION_H
+#define PRECISION_H
+#include "precision.h"
+#endif
 template<typename T, const int N>
 struct Mtx {
     T a[N][N];
@@ -8,7 +12,7 @@ struct Mtx {
     template<typename P>
     Mtx(P _a[][N]) {
         for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j) a[i][j] = _a[i][j];
+            for (int j = 0; j < N; ++j) a[i][j] = (T)_a[i][j];
         }
     }
     template<typename P>
@@ -29,10 +33,13 @@ struct Vec {
     Vec() : a() {}
     template<typename P>
     Vec(P* _a) {
-        for (int i = 0; i < N; ++i) a[i] = _a[i];
+        for (int i = 0; i < N; ++i) a[i] = (T)_a[i];
     }
     template<typename P>
-    Vec(const Vec<P, N>& _a) : a(_a.a) {}
+    Vec(const Vec<P, N>& _a) {
+        *this = Vec<T, N>(_a.a);
+    }
+
     T& operator[](int x) {
         return a[x];
     }
@@ -62,22 +69,23 @@ T dot(const Vec<T, N>& a, const Vec<T, N>& b){
 }
 template<typename T, const int N>
 T Vec<T, N>::nrm2() const {
-    return sqrt(dot(*this, *this));
+    return (T)sqrt(dot(*this, *this));
 }
-template<typename P, typename T, const int N>
-Vec<T, N> operator*(const P& a, const Vec<T, N>& x) {
-    Vec<T, N> r = x;
-    for (int i = 0; i < N; ++i) r[i] = a * r[i];
-    return r;
-}
-template<typename T, const int N>
-Vec<T, N> operator*(const Mtx<T, N>& A, const Vec<T, N>& x) {
+template<typename T, typename P, const int N>
+Vec<T, N> operator*(const Mtx<T, N>& A, const Vec<P, N>& x) {
     Vec<T, N> r;
     for (int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
-            r[i] += A[i][j] * x[j];
+            r[i] += A[i][j] * (T)x[j];
         }
     }
+    return r;
+}
+
+template<typename P, typename T, const int N>
+Vec<T, N> operator*(const P& a, const Vec<T, N>& x) {
+    Vec<T, N> r(x);
+    for (int i = 0; i < N; ++i) r[i] = a * r[i];
     return r;
 }
 

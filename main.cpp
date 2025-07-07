@@ -4,11 +4,17 @@
 #include <cstring>
 #include <iostream>
 #include "matrix.h"
+#ifndef PRECISION_H
+#define PRECISION_H
+#include "precision.h"
+#endif
+
 using bf16 = __bf16;
 using fp16 = _Float16;
 using fp32 = float;
 using fp64 = double;
-const int RESTART = 20;
+
+const int RESTART = 20; // restart times per iteration
 using std::cerr;
 
 template<const int N>
@@ -21,7 +27,9 @@ struct GMRES {
     GMRES(Mtx<fp64, N> _A, const fp64* _b) :
     A_bf16(_A), A_fp16(_A), A_fp32(_A), A_fp64(_A), b(_b) {}
     template<typename T>
-    Vec<fp64, N> work(Vec<fp64, N> x, fp64 eps, int IterMax) {
+    Vec<fp64, N> work(Vec<fp64, N> x, fp64 eps, int IterMax) 
+    // initial guessed solution x, solution epsilon, iteration limit
+    {
         Mtx<T, N> A;
         if constexpr (std::is_same_v<T, bf16>) {
             A = A_bf16;
@@ -47,7 +55,7 @@ struct GMRES {
             V[0] = 1 / beta * r;
             
             Vec<T, RESTART + 1> s;
-            s[0] = beta;
+            s[0] = (T)beta;
 
             std::vector<std::pair<T, T>> givens(RESTART);
             int j = 0;
@@ -68,7 +76,7 @@ struct GMRES {
                 s[j + 1] = -givens[j].second * s[j];
                 s[j] = givens[j].first * s[j];
 
-                T res = std::abs(s[j + 1]);
+                T res = abs(s[j + 1]);
                 if (res < tol) break;
             }
 
@@ -105,8 +113,13 @@ int main() {
         {0, 0, -1, 0, -1, 4}
     };
     fp64 b[N] = {0, 5, 0, 6, -2, 6};
-    fp64 x[N] = {0, 0, 0, 0, 0, 0};
-    GMRES<N> proc(Mtx<fp64, N>(A), b);
-    auto ans = proc.work<fp64>(Vec<fp64, N>(x), 1e-6, 1000);
-    std::cout << ans << '\n';
+    GMRES<N> proc(Mtx<fp64, N>(A), b); // initialization
+
+    fp64 x0[N] = {0, 0, 0, 0, 0, 0};
+    auto x1 = proc.work<fp16>(Vec<fp64, N>(x0), 1e-6, 20);
+    auto x2 = proc.work<bf16>(Vec<fp64, N>(x1), 1e-6, 20);
+    auto x3 = proc.work<fp32>(Vec<fp64, N>(x1), 1e-6, 20);
+    auto x4 = proc.work<fp64>(Vec<fp64, N>(x1), 1e-6, 20);
+    
+    std::cout << x1 << '\n' << x2 << '\n' << x3 << '\n' << x4 << '\n';
 }
