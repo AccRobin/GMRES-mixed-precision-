@@ -118,8 +118,8 @@ int main() {
     fp64 x0[N] = {0, 0, 0, 0, 0, 0};
     auto x1 = proc.work<fp16>(Vec<fp64, N>(x0), 1e-6, 20);
     auto x2 = proc.work<bf16>(Vec<fp64, N>(x1), 1e-6, 20);
-    auto x3 = proc.work<fp32>(Vec<fp64, N>(x1), 1e-6, 20);
-    auto x4 = proc.work<fp64>(Vec<fp64, N>(x1), 1e-6, 20);
+    auto x3 = proc.work<fp32>(Vec<fp64, N>(x2), 1e-6, 20);
+    auto x4 = proc.work<fp64>(Vec<fp64, N>(x3), 1e-6, 20);
     
     std::cout << x1 << '\n' << x2 << '\n' << x3 << '\n' << x4 << '\n';
 }
